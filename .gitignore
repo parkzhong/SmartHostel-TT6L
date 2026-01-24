@@ -13,3 +13,6 @@ __pycache__/
 
 # Firebase secrets
 backend/firebase/serviceAccountKey.json
+
+# Environment variables
+backend/.env
