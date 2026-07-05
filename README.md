@@ -170,15 +170,3 @@ frontend/build/
 ```
 
 Use `.env.example` files to show required environment variables without exposing real secrets.
-
-## GitHub Branch
-
-Current working branch:
-
-```txt
-samson
-```
-
-## Author
-
-Smart Hostel TT6L Project
