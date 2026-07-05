@@ -1,0 +1,49 @@
+.student-footer {
+    width: 100%;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 32px 0;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    text-align: center;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.footer-link svg {
+    flex-shrink: 0;
+}
+
+.footer-link:hover {
+    color: #3b82f6;
+}
+
+.footer-divider {
+    color: #d1d5db;
+}
+
+.footer-copyright {
+    color: #9ca3af;
+    font-size: 13px;
+}

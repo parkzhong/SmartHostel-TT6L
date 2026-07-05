@@ -1,0 +1,212 @@
+/* Student Visitor Registration Styles */
+.visitor-registration-page {
+    min-height: 100vh;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.visitor-registration-container {
+    width: 100%;
+    min-height: 100vh;
+    background: white;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* Header styles handled by StudentHeader component */
+
+.visitor-registration-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: white;
+    min-height: calc(100vh - 140px);
+}
+
+/* Main Form Area */
+.visitor-main {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.visitor-hub-header {
+    margin-bottom: 32px;
+}
+
+.visitor-hub-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.visitor-hub-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* My Registered Visitors Section */
+.registered-visitors {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.visitors-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px;
+}
+
+.visitor-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: background-color 0.2s;
+}
+
+.visitor-card:hover {
+    background-color: #f3f4f6;
+}
+
+.visitor-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.visitor-icon.blue {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.visitor-icon.green {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.visitor-icon.yellow {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.visitor-details {
+    flex: 1;
+}
+
+.visitor-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.visitor-info {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.visitor-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.visitor-status.expected {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.visitor-status.checked-in {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.visitor-status.check-in {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.visitor-status.check-out {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.visitor-status.pending {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.visitor-status.approved {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.visitor-status.rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.no-visitors {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Footer */
+.visitor-registration-footer {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+}
+
+/* Status Message */
+.visitor-status-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.visitor-status-message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.visitor-status-message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .visitor-registration-content {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

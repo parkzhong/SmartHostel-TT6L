@@ -1,0 +1,202 @@
+/* Student Maintenance Request Styles */
+.maintenance-request-page {
+    min-height: 100vh;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.maintenance-request-container {
+    width: 100%;
+    min-height: 100vh;
+    background: white;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* Header styles handled by StudentHeader.css */
+
+.maintenance-request-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: white;
+    min-height: calc(100vh - 140px);
+}
+
+/* Main Form Area */
+.maintenance-main {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.maintenance-hub-header {
+    margin-bottom: 32px;
+}
+
+.maintenance-hub-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.maintenance-hub-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Maintenance History Section */
+.maintenance-history {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.history-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px;
+}
+
+.history-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: background-color 0.2s;
+}
+
+.history-card:hover {
+    background-color: #f3f4f6;
+}
+
+.history-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.history-icon.blue {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.history-icon.green {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.history-icon.yellow {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.history-details {
+    flex: 1;
+}
+
+.history-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.history-info {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.history-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.history-status.in-progress {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.history-status.pending {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.history-status.assigned {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.history-status.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.history-status.resolved {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.no-history {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Footer */
+.maintenance-request-footer {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+}
+
+/* Status Message */
+.maintenance-status-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.maintenance-status-message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.maintenance-status-message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .maintenance-request-content {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
