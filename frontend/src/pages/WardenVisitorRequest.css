@@ -1,0 +1,249 @@
+/* Warden Visitor Request Styles */
+.visitor-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.visitor-request-card {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.visitor-request-card:hover {
+    border-color: #e5e7eb;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.visitor-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.visitor-info-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.visitor-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.visitor-avatar svg {
+    width: 24px;
+    height: 24px;
+}
+
+.visitor-details h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.visitor-student-name {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.status-badge-visitor {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge-visitor.pending {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-badge-visitor.approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge-visitor.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.visitor-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.visitor-detail-item label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.visitor-detail-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.visitor-detail-value svg {
+    width: 14px;
+    height: 14px;
+    color: #6b7280;
+}
+
+.ic-number {
+    font-family: 'Courier New', monospace;
+}
+
+.relationship-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.time-slot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.purpose-section {
+    margin-bottom: 16px;
+}
+
+.purpose-section label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.purpose-text {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.visitor-actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+}
+
+.approve-visitor-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.approve-visitor-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.approve-visitor-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.reject-visitor-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.reject-visitor-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.reject-visitor-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Page Footer Info */
+.page-footer-info {
+    text-align: center;
+    padding: 20px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .visitor-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .visitor-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visitor-actions {
+        grid-template-columns: 1fr;
+    }
+}

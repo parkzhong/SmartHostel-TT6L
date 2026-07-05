@@ -14,10 +14,15 @@ load_dotenv()
 
 # 1) Initialize Flask app
 app = Flask(__name__)
-CORS(app, 
-     resources={r"/api/*":{"origins": ["http://localhost:3000", "http://127.0.0.1:3000"] }},
+CORS(app,
+     resources={r"/api/*":{"origins": [
+         "http://localhost:3000", "http://127.0.0.1:3000",
+         "http://localhost:3001", "http://127.0.0.1:3001",
+         "http://localhost:5173", "http://127.0.0.1:5173",
+         "http://localhost:5174", "http://127.0.0.1:5174"
+     ] }},
     allow_headers=["Content-Type", "Authorization"],
-    methods = ["GET", "POST", "OPTIONS"]) # allow React to call this API
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])  # allow frontend to call this API
 
 
 #2) Initialize Firebase Admin (service account)
@@ -48,6 +53,10 @@ def make_student_email(full_name: str, domain: str = "student.mme.edu.my") -> st
 def send_approval_email(to_email, full_name, student_email, reset_link):
     smtp_email = os.getenv("SMTP_EMAIL")
     smtp_app_password = os.getenv("SMTP_APP_PASSWORD")
+
+    # Gmail App Passwords are often copied with spaces; normalize it
+    smtp_app_password = (smtp_app_password or "").replace(" ", "")
+
 
     if not smtp_email or not smtp_app_password:
         raise RuntimeError("SMTP credentials not found")
@@ -80,6 +89,9 @@ def send_approval_email(to_email, full_name, student_email, reset_link):
 def send_maintenance_completed_email(to_email, student_name, category, location, note):
     smtp_email = os.getenv("SMTP_EMAIL")
     smtp_app_password = os.getenv("SMTP_APP_PASSWORD")
+
+    # Gmail App Passwords are often copied with spaces; normalize it
+    smtp_app_password = (smtp_app_password or "").replace(" ", "")
 
     if not smtp_email or not smtp_app_password:
         raise RuntimeError("SMTP credentials not found")
@@ -182,15 +194,161 @@ def require_maintenance_staff(uid: str):
 def now_ts():
     return firestore.SERVER_TIMESTAMP
 
+def create_notification(uid: str, title: str, message: str):
+    """
+    Creates a notification document in Firestore for a specific user.
+    """
+    try:
+        db.collection("notifications").add({
+            "uid": uid,
+            "title": title,
+            "message": message,
+            "read": False,
+            "createdAt": firestore.SERVER_TIMESTAMP
+        })
+    except Exception as e:
+        print(f"Error creating notification for {uid}: {e}")
+
+def notify_wardens(title: str, message: str):
+    """
+    Sends a notification to all active wardens.
+    """
+    try:
+        wardens = db.collection("users").where("role", "==", "warden").stream()
+        for doc in wardens:
+            d = doc.to_dict() or {}
+            if (d.get("status") or "").lower() == "active":
+                create_notification(doc.id, title, message)
+    except Exception as e:
+        print(f"Error notifying wardens: {e}")
+
+@app.route("/api/student/notifications", methods=["GET"])
+def get_student_notifications():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    # Try the indexed query first (uid + createdAt). If index is missing, fall back.
+    try:
+        query = (
+            db.collection("notifications")
+            .where("uid", "==", uid)
+            .order_by("createdAt", direction=firestore.Query.DESCENDING)
+            .limit(20)
+            .stream()
+        )
+        docs = list(query)
+    except Exception as e:
+        # Common in prototypes: missing composite index. Fall back to simple where + local sort.
+        docs = list(db.collection("notifications").where("uid", "==", uid).stream())
+
+    notifs = []
+    for doc in docs:
+        d = doc.to_dict() or {}
+        d["id"] = doc.id
+        if d.get("createdAt"):
+            d["createdAt"] = d["createdAt"].isoformat() if hasattr(d["createdAt"], "isoformat") else str(d["createdAt"])
+        notifs.append(d)
+
+    # If we used the fallback, sort here
+    notifs.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    return jsonify(notifs[:20])
+
+@app.route("/api/student/mark-notifications-read", methods=["POST"])
+def mark_notifications_read():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+        
+    try:
+        # Batch update unread notifications
+        batch = db.batch()
+        # Try an indexed query first; if index is missing, fall back to uid-only and filter in Python
+        try:
+            query = db.collection("notifications").where("uid", "==", uid).where("read", "==", False).stream()
+            docs = list(query)
+        except Exception:
+            docs = [d for d in db.collection("notifications").where("uid", "==", uid).stream()
+                    if (d.to_dict() or {}).get("read") is False]
+        
+        count = 0
+        for doc in docs:
+            batch.update(doc.reference, {"read": True})
+            count += 1
+            
+        if count > 0:
+            batch.commit()
+            
+        return jsonify({"ok": True, "marked": count})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/admin/server-logs", methods=["GET"])
+def get_admin_server_logs():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    
+    _, role_err = require_active_role(uid, "admin")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+    
+    try:
+        # Fetch actual logs from Firestore
+        logs_ref = db.collection("server_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(100)
+        logs_docs = logs_ref.stream()
+        
+        logs = []
+        for doc in logs_docs:
+            log_data = doc.to_dict()
+            log_data["id"] = doc.id
+            
+            # Convert timestamp to ISO format if it exists
+            if log_data.get("timestamp"):
+                if hasattr(log_data["timestamp"], "isoformat"):
+                    log_data["timestamp"] = log_data["timestamp"].isoformat()
+                else:
+                    log_data["timestamp"] = str(log_data["timestamp"])
+            
+            logs.append(log_data)
+        
+        return jsonify(logs)
+    except Exception as e:
+        print(f"Error fetching server logs: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+def log_server_event(log_type, message, source="System"):
+    """
+    Helper function to log server events to Firestore
+    log_type: "info", "warning", or "error"
+    message: Description of the event
+    source: Source of the log (e.g., "Auth Service", "API Gateway")
+    """
+    try:
+        from datetime import datetime
+        db.collection("server_logs").add({
+            "timestamp": datetime.now(),
+            "type": log_type,
+            "message": message,
+            "source": source
+        })
+    except Exception as e:
+        print(f"Failed to log event: {str(e)}")
+
+
 # 3) Define routes
 @app.route("/api/health")
 def health():
+    # Log health check periodically (you can add logic to log only every N requests)
+    import random
+    if random.random() < 0.1:  # Log 10% of health checks to avoid spam
+        log_server_event("info", "Health check performed - System operational", "API Gateway")
     return jsonify({"status": "ok"})
 
 @app.route("/api/student/register-profile", methods=["POST"])
 def register_profile():
     # read bearer token
-    header = request.headers.get("Authorization")
+    header = request.headers.get("Authorization", "")
     if not header.startswith("Bearer "):
         return jsonify({"error": "Missing Bearer token"}), 401
     
@@ -220,6 +378,9 @@ def register_profile():
         "createdAt": datetime.utcnow().isoformat(),
         "status": "pending"
     }, merge=True)
+    
+    # Log the registration event
+    log_server_event("info", f"New student registration: {data['fullName']}", "Auth Service")
 
     return jsonify({"ok": True, "uid" : uid}), 201
 
@@ -230,14 +391,13 @@ def admin_pending_students():
         return jsonify({"error": err[0]}), err[1]
     students = []
 
-    query = (
-        db.collection("users")
-        .where("role", "==", "student")
-        .where("status", "in", ["pending","email_failed","approving"])
-        .stream()
-    )
+    # Composite indexes are often missing in student projects; use role-only query + local filter
+    allowed_status = {"pending", "email_failed", "approving"}
+    query = db.collection("users").where("role", "==", "student").stream()
 
     for doc in query:
+        if ((doc.to_dict() or {}).get("status") or "").lower() not in allowed_status:
+            continue
         data = doc.to_dict()
         data["uid"] = doc.id
         students.append(data)
@@ -295,7 +455,7 @@ def approve_student():
 
     try:
         # update Firebase Auth email
-        auth.update_user(uid, email=student_email)
+        auth.update_user(uid, email=student_email, email_verified=True)
 
         # generate password reset link
         reset_link = auth.generate_password_reset_link(student_email)
@@ -311,6 +471,11 @@ def approve_student():
             "resetLinkSent": True,
         }, merge=True)
 
+        create_notification(uid, "Account Approved", "Your account has been approved. Welcome to Smart Hostel!")
+        
+        # Log the approval event
+        log_server_event("info", f"Student account approved: {student_email}", "Admin Service")
+
         return jsonify({
             "ok": True,
             "uid": uid,
@@ -320,6 +485,9 @@ def approve_student():
     
     except Exception as e:
         err_msg = str(e)
+        
+        # Log the error
+        log_server_event("error", f"Failed to approve student {uid}: {err_msg}", "Admin Service")
 
         # A) Update Firestore so admin can see it failed (and can retry later)
         doc_ref.set({
@@ -399,7 +567,7 @@ def retry_approval_email():
 
     try:
         # Make sure Auth email is set correctly (safe)
-        auth.update_user(uid, email=student_email)
+        auth.update_user(uid, email=student_email, email_verified=True)
 
         # Generate a NEW reset link each retry
         reset_link = auth.generate_password_reset_link(student_email)
@@ -465,6 +633,8 @@ def student_request_room():
         "createdAt": datetime.utcnow().isoformat(),
         "status": "pending_warden"
     })
+
+    notify_wardens("New Room Request", f"Student {user.get('fullName')} requested a {room_type} room.")
 
     return jsonify({"ok": True, "requestId": doc_ref.id}), 201
 
@@ -553,6 +723,9 @@ def warden_approve_room_request():
         "approvedAt": datetime.utcnow().isoformat()
     }, merge=True)
 
+    print(f"DEBUG: Approving room request {request_id} for student {req.get('studentUid')}")
+    create_notification(req.get("studentUid"), "Room Request Approved", f"Your room request has been approved: {allocation}. Remark: {remark}")
+
     return jsonify({"ok": True, "requestId": request_id})
 
 @app.route("/api/warden/reject-room-request", methods=["POST"])
@@ -588,6 +761,8 @@ def warden_reject_room_request():
         "rejectedByName": warden.get("fullName", ""),
         "rejectedAt": datetime.utcnow().isoformat()
     }, merge=True)
+
+    create_notification(req.get("studentUid"), "Room Request Rejected", f"Your room request was rejected. Reason: {reason}")
 
     return jsonify({"ok": True, "requestId": request_id})
 
@@ -699,6 +874,36 @@ def warden_room_requests_summary():
         "rejected": rejected
     })
 
+@app.route("/api/warden/dashboard-stats", methods=["GET"])
+def warden_dashboard_stats():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    _, role_err = require_active_role(uid, "warden")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+
+    # Count active students
+    students_query = db.collection("users").where("role", "==", "student").where("status", "==", "active").count()
+    # Note: .count() aggregation query is better but stream() is compatible with potential older firebase-admin versions if count() isn't available.
+    # However, standard firestore count queries are efficient.
+    # Let's use aggregation query if possible, or just len(list(...)) for safety if unsure of env.
+    # Given the other code uses stream(), I'll stick to stream for consistency and safety, though less efficient for huge datasets.
+    
+    count = 0
+    # Optimization: If many students, this is slow. But for this project scale, it's fine.
+    # Using aggregation query is preferred in production:
+    try:
+        agg = db.collection("users").where("role", "==", "student").where("status", "==", "active").count().get()
+        count = agg[0][0].value
+    except:
+        # Fallback for older SDKs
+        docs = db.collection("users").where("role", "==", "student").where("status", "==", "active").stream()
+        count = sum(1 for _ in docs)
+
+    return jsonify({"activeStudents": count})
+
 @app.route("/api/student/request-maintenance", methods=["POST"])
 def student_request_maintenance():
     uid, err = get_uid_from_bearer()
@@ -747,6 +952,8 @@ def student_request_maintenance():
         "updatedAt": datetime.utcnow().isoformat(),
     })
 
+    notify_wardens("New Maintenance Request", f"Student {user.get('fullName')} reported a {category} issue at {location}.")
+
     return jsonify({"ok": True, "requestId": doc_ref.id}), 201
 
 
@@ -781,15 +988,12 @@ def warden_list_maintenance_staff():
         return jsonify({"error": role_err[0]}), role_err[1]
 
     staff = []
-    q = (
-        db.collection("users")
-        .where("role", "==", "maintenance_staff")
-        .where("status", "==", "active")
-        .stream()
-    )
+    q = db.collection("users").where("role", "==", "maintenance_staff").stream()
 
     for doc in q:
-        d = doc.to_dict()
+        d = doc.to_dict() or {}
+        if (d.get("status") or "").lower() != "active":
+            continue
         staff.append({
             "uid": doc.id,
             "fullName": d.get("fullName", ""),
@@ -797,6 +1001,42 @@ def warden_list_maintenance_staff():
         })
 
     return jsonify(staff)
+
+
+@app.route("/api/warden/staff-directory", methods=["GET"])
+def warden_list_wardens():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    _, role_err = require_active_role(uid, "warden")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+
+    results = []
+    q = db.collection("users").where("role", "==", "warden").stream()
+
+    for doc in q:
+        d = doc.to_dict() or {}
+        if (d.get("status") or "").lower() != "active":
+            continue
+        email = d.get("email") or d.get("wardenEmail") or d.get("studentEmail") or d.get("personalEmail")
+        
+        # Fallback to Auth email if missing in Firestore to ensure it matches the logged-in user experience
+        if not email:
+            try:
+                user_record = auth.get_user(doc.id)
+                email = user_record.email
+            except Exception:
+                email = ""
+
+        results.append({
+            "uid": doc.id,
+            "fullName": d.get("fullName", ""),
+            "email": email,
+        })
+
+    return jsonify(results)
 
 @app.route("/api/warden/pending-maintenance-requests", methods=["GET"])
 def warden_pending_maintenance_requests():
@@ -870,6 +1110,8 @@ def warden_assign_maintenance_request():
         "updatedAt": datetime.utcnow().isoformat()
     }, merge=True)
 
+    create_notification(req.get("studentUid"), "Maintenance Request Assigned", f"Your maintenance request has been assigned to staff: {staff.get('fullName', '')}. Remark: {remark}")
+
     return jsonify({"ok": True, "requestId": request_id})
 
 @app.route("/api/warden/reject-maintenance-request", methods=["POST"])
@@ -906,6 +1148,8 @@ def warden_reject_maintenance_request():
         "rejectedAt": datetime.utcnow().isoformat(),
         "updatedAt": datetime.utcnow().isoformat()
     }, merge=True)
+
+    create_notification(req.get("studentUid"), "Maintenance Request Rejected", f"Your maintenance request was rejected. Reason: {reason}")
 
     return jsonify({"ok": True, "requestId": request_id})
 
@@ -994,6 +1238,9 @@ def maintenance_update_request_status():
             print("Email send failed:", e)
 
     req_ref.set(update, merge=True)
+
+    create_notification(req.get("studentUid"), "Maintenance Status Update", f"Your maintenance request is now {new_status}. Note: {note}")
+
     return jsonify({"ok": True, "requestId": request_id, "status": new_status})
 
 # =========================
@@ -1052,6 +1299,8 @@ def student_request_visitor():
         "updatedAt": datetime.utcnow().isoformat(),
     })
 
+    notify_wardens("New Visitor Request", f"Student {user.get('fullName')} requested a visit from {visitor_name}.")
+
     return jsonify({"ok": True, "requestId": doc_ref.id}), 201
 
 
@@ -1086,6 +1335,25 @@ def warden_pending_visitor_requests():
         results.append(doc.to_dict())
 
     results.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+    return jsonify(results)
+
+
+@app.route("/api/warden/visitor-request-history", methods=["GET"])
+def warden_visitor_request_history():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    _, role_err = require_active_role(uid, "warden")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+
+    results = []
+    q = db.collection("visitor_requests").where("status", "in", ["approved", "rejected"]).stream()
+    for doc in q:
+        results.append(doc.to_dict())
+
+    results.sort(key=lambda x: x.get("updatedAt", x.get("createdAt", "")), reverse=True)
     return jsonify(results)
 
 
@@ -1124,6 +1392,8 @@ def warden_approve_visitor():
         "updatedAt": datetime.utcnow().isoformat(),
     }, merge=True)
 
+    create_notification(req.get("studentUid"), "Visitor Request Approved", f"Your visitor request has been approved. Remark: {remark}")
+
     return jsonify({"ok": True, "requestId": request_id})
 
 
@@ -1161,6 +1431,8 @@ def warden_reject_visitor():
         "rejectedAt": datetime.utcnow().isoformat(),
         "updatedAt": datetime.utcnow().isoformat(),
     }, merge=True)
+
+    create_notification(req.get("studentUid"), "Visitor Request Rejected", f"Your visitor request was rejected. Reason: {reason}")
 
     return jsonify({"ok": True, "requestId": request_id})
 
@@ -1202,6 +1474,8 @@ def student_report_violation():
         "createdAt": datetime.utcnow().isoformat(),
         "updatedAt": datetime.utcnow().isoformat(),
     })
+
+    notify_wardens("New Violation Report", f"Student {user.get('fullName')} reported a violation: {category}.")
 
     return jsonify({"ok": True, "violationId": doc_ref.id}), 201
 
@@ -1279,8 +1553,10 @@ def warden_update_violation():
         update["resolvedAt"] = datetime.utcnow().isoformat()
 
     ref.set(update, merge=True)
-    return jsonify({"ok": True, "violationId": violation_id, "status": new_status})
 
+    create_notification(snap.to_dict().get("studentUid"), "Violation Updated", f"Your violation report status is now: {new_status}. Action: {action}")
+
+    return jsonify({"ok": True, "violationId": violation_id, "status": new_status})
 
 
 # =========================
@@ -1326,6 +1602,8 @@ def student_report_incident():
         "createdAt": datetime.utcnow().isoformat(),
         "updatedAt": datetime.utcnow().isoformat(),
     })
+
+    notify_wardens("New Incident Report", f"Incident reported by {student.get('fullName')}: {category} at {location}.")
 
     return jsonify({"ok": True, "reportId": doc_ref.id}), 201
 
@@ -1437,6 +1715,9 @@ def warden_update_incident():
         update["rejectReason"] = reject_reason
 
     ref.set(update, merge=True)
+
+    create_notification(snap.to_dict().get("studentUid"), "Incident Report Update", f"Your incident report status is now: {new_status}. Remark: {warden_remark}")
+
     return jsonify({"ok": True, "reportId": report_id, "status": new_status})
 
 # =========================
@@ -1481,6 +1762,18 @@ def admin_create_payment_item():
         "createdByUid": uid_admin,
         "createdByName": admin_profile.get("fullName", "Admin"),
     })
+
+    # Notify all active students
+    try:
+        students = db.collection("users").where("role", "==", "student").where("status", "==", "active").stream()
+        for student in students:
+            create_notification(
+                student.id, 
+                "New Payment Item", 
+                f"A new payment item '{title}' has been added. Amount: RM{amount_val:.2f}"
+            )
+    except Exception as e:
+        print(f"Error notifying students about payment item: {e}")
 
     return jsonify({"ok": True, "itemId": ref.id}), 201
 
@@ -1570,14 +1863,9 @@ def student_pay_payment_item():
         return jsonify({"error": "This payment item is not active"}), 400
 
     # Optional: prevent duplicate payment for same item by same student
-    existing = (
-        db.collection("payments")
-        .where("studentUid", "==", uid)
-        .where("itemId", "==", item_id)
-        .limit(1)
-        .stream()
-    )
-    if any(True for _ in existing):
+    # Avoid composite index requirement by querying by studentUid only and filtering in Python
+    existing = db.collection("payments").where("studentUid", "==", uid).stream()
+    if any(((d.to_dict() or {}).get("itemId") == item_id) for d in existing):
         return jsonify({"error": "You already paid this item"}), 400
 
     pay_ref = db.collection("payments").document()
@@ -1605,6 +1893,81 @@ def student_pay_payment_item():
     })
 
     return jsonify({"ok": True, "paymentId": pay_ref.id}), 201
+
+@app.route("/api/warden/approve-payment", methods=["POST"])
+def warden_approve_payment():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    
+    warden, role_err = require_active_role(uid, "warden")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+    
+    data = request.json or {}
+    payment_id = (data.get("paymentId") or "").strip()
+    
+    if not payment_id:
+        return jsonify({"error": "paymentId is required"}), 400
+        
+    ref = db.collection("payments").document(payment_id)
+    snap = ref.get()
+    if not snap.exists:
+        return jsonify({"error": "Payment not found"}), 404
+        
+    payment = snap.to_dict()
+    if (payment.get("status") or "") != "pending_warden":
+        return jsonify({"error": "Payment is not pending"}), 400
+        
+    ref.set({
+        "status": "approved",
+        "approvedByUid": uid,
+        "approvedByName": warden.get("fullName", ""),
+        "approvedAt": datetime.utcnow().isoformat(),
+        "paidAt": datetime.utcnow().isoformat()
+    }, merge=True)
+    
+    create_notification(payment.get("studentUid"), "Payment Approved", f"Your payment for {payment.get('itemTitle', 'item')} has been approved.")
+    
+    return jsonify({"ok": True, "paymentId": payment_id})
+
+@app.route("/api/warden/reject-payment", methods=["POST"])
+def warden_reject_payment():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    
+    warden, role_err = require_active_role(uid, "warden")
+    if role_err:
+        return jsonify({"error": role_err[0]}), role_err[1]
+    
+    data = request.json or {}
+    payment_id = (data.get("paymentId") or "").strip()
+    reason = (data.get("reason") or "Rejected by warden").strip()
+    
+    if not payment_id:
+        return jsonify({"error": "paymentId is required"}), 400
+        
+    ref = db.collection("payments").document(payment_id)
+    snap = ref.get()
+    if not snap.exists:
+        return jsonify({"error": "Payment not found"}), 404
+        
+    payment = snap.to_dict()
+    if (payment.get("status") or "") != "pending_warden":
+        return jsonify({"error": "Payment is not pending"}), 400
+        
+    ref.set({
+        "status": "rejected",
+        "rejectReason": reason,
+        "rejectedByUid": uid,
+        "rejectedByName": warden.get("fullName", ""),
+        "rejectedAt": datetime.utcnow().isoformat()
+    }, merge=True)
+    
+    create_notification(payment.get("studentUid"), "Payment Rejected", f"Your payment for {payment.get('itemTitle', 'item')} was rejected. Reason: {reason}")
+    
+    return jsonify({"ok": True, "paymentId": payment_id})
 
 @app.route("/api/admin/all-payments", methods=["GET"])
 def admin_all_payments():
@@ -1657,6 +2020,169 @@ def student_active_payment_items():
     results.sort(key=lambda x:x.get("createdAt", ""), reverse=True)
     return jsonify(results)
 
+@app.route("/api/admin/all-students", methods=["GET"])
+def admin_get_all_students():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    # Verify admin role
+    _, role_err = require_active_role(uid, "admin")
+    if role_err:
+        return jsonify({"error": "Forbidden"}), 403
+
+    try:
+        # Fetch all users who are students
+        students = []
+        docs = db.collection("users").where("role", "==", "student").stream()
+        
+        for doc in docs:
+            data = doc.to_dict()
+            data["uid"] = doc.id
+            students.append(data)
+            
+        return jsonify(students)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/admin/update-student-room", methods=["POST"])
+def admin_update_student_room():
+    uid, err = get_uid_from_bearer()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    # Verify admin role
+    _, role_err = require_active_role(uid, "admin")
+    if role_err:
+        return jsonify({"error": "Forbidden"}), 403
+
+    try:
+        data = request.json or {}
+        student_uid = data.get("uid")
+        
+        if not student_uid:
+            return jsonify({"error": "Student UID is required"}), 400
+
+        updates = {
+            "block": data.get("block", ""),
+            "roomNumber": data.get("roomNumber", ""),
+            "checkInDate": data.get("checkInDate", ""),
+            "leaseEnds": data.get("leaseEnds", "")
+        }
+
+        # Update Firestore document
+        db.collection("users").document(student_uid).set(updates, merge=True)
+        
+        return jsonify({"ok": True, "message": "Student updated successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# =========================
+# STAFF MANAGEMENT
+# =========================
+
+@app.route("/api/admin/all-staff", methods=["GET"])
+def admin_all_staff():
+    uid_admin, err = require_admin()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    
+    users = []
+    try:
+        query = db.collection("users").where("role", "in", ["admin", "warden", "maintenance_staff"]).stream()
+        for doc in query:
+            d = doc.to_dict()
+            d["uid"] = doc.id
+            users.append(d)
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/admin/create-staff", methods=["POST"])
+def admin_create_staff():
+    uid_admin, err = require_admin()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    data = request.json or {}
+    email = (data.get("email") or "").strip()
+    password = (data.get("password") or "").strip()
+    full_name = (data.get("fullName") or "").strip()
+    role = (data.get("role") or "").strip().lower()
+
+    if not email or not password or not full_name or not role:
+        return jsonify({"error": "Missing required fields (email, password, fullName, role)"}), 400
+    
+    if role not in ["admin", "warden", "maintenance_staff"]:
+        return jsonify({"error": "Invalid role. Must be admin, warden, or maintenance_staff"}), 400
+
+    try:
+        # Create in Auth
+        user = auth.create_user(email=email, password=password, display_name=full_name)
+        
+        # Create in Firestore
+        db.collection("users").document(user.uid).set({
+            "fullName": full_name,
+            "email": email,
+            "role": role,
+            "status": "active",
+            "createdAt": datetime.utcnow().isoformat()
+        })
+        
+        return jsonify({"ok": True, "uid": user.uid, "message": "Staff created successfully"})
+    except Exception as e:
+         return jsonify({"error": str(e)}), 400
+
+@app.route("/api/admin/delete-staff", methods=["POST"])
+def admin_delete_staff():
+    uid_admin, err = require_admin()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+
+    data = request.json or {}
+    target_uid = (data.get("uid") or "").strip()
+
+    if not target_uid:
+        return jsonify({"error": "uid is required"}), 400
+    
+    if target_uid == uid_admin:
+        return jsonify({"error": "Cannot delete your own account"}), 400
+
+    try:
+        # Check target role
+        snap = db.collection("users").document(target_uid).get()
+        if not snap.exists:
+            return jsonify({"error": "User not found"}), 404
+        
+        target_role = snap.to_dict().get("role")
+        if target_role == "student":
+             return jsonify({"error": "Cannot delete student via this API. Use reject student API."}), 400
+
+        # Delete Auth
+        try:
+            auth.delete_user(target_uid)
+        except auth.UserNotFoundError:
+            pass # continue to delete firestore
+
+        # Delete Firestore
+        db.collection("users").document(target_uid).delete()
+        
+        return jsonify({"ok": True, "message": "Staff deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # 4) Start Flask server
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+# --- Compatibility aliases for frontend route names ---
+@app.route("/api/admin/payment-records", methods=["GET"])
+def admin_payment_records():
+    # Frontend uses /payment-records; reuse the existing implementation
+    return admin_all_payments()
+
+@app.route("/api/warden/pending-violation-reports", methods=["GET"])
+def warden_pending_violation_reports():
+    # Frontend uses /pending-violation-reports; reuse existing handler
+    return warden_pending_violations()

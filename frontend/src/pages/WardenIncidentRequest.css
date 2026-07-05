@@ -1,0 +1,76 @@
+/* Warden Incident Report Styles - extends maintenance table styles */
+
+/* Additional status colors for incident reports */
+.status-badge-table.smoking {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge-table.in-review {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge-table.resolved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Category badges for incidents */
+.category-badge.smoking {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.category-badge.noise {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.category-badge.vandalism {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.category-badge.theft {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.category-badge.safety {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Quick stats banner */
+.incident-stats-banner {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.stat-number {
+    font-weight: 700;
+    color: #ef4444;
+    font-size: 16px;
+}
+
+.stat-number.warning {
+    color: #f59e0b;
+}
+
+.stat-number.success {
+    color: #10b981;
+}

@@ -1,0 +1,160 @@
+/* Student Payment Page Styles */
+.payment-page {
+    min-height: 100vh;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.payment-container {
+    width: 100%;
+    min-height: 100vh;
+    background: white;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* Header styles handled by StudentHeader.css */
+.payment-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: white;
+    min-height: calc(100vh - 140px);
+}
+
+/* Sidebar Profile (Reused structure) */
+.request-sidebar {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    height: fit-content;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+    margin: 0 0 4px;
+}
+
+.profile-email {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 12px;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #d1fae5;
+    color: #065f46;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0 auto 20px;
+    width: fit-content;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.profile-details {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    margin-top: 16px;
+    width: 100%;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.detail-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #111827;
+    font-weight: 500;
+}
+
+.back-to-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-top: 20px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    /* Matches ProfileSettings style mostly */
+    background: transparent;
+    cursor: pointer;
+}
+
+.back-to-dashboard:hover {
+    background-color: #eff6ff;
+}
+
+/* Main Content Area */
+.payment-main {
+    background: transparent;
+}
+
+.payment-hub-header {
+    margin-bottom: 32px;
+}
+
+.payment-hub-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .payment-content {
+        grid-template-columns: 1fr;
+    }
+
+    .request-sidebar {
+        order: -1;
+    }
+}

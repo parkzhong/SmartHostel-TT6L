@@ -1,0 +1,325 @@
+/* Student Payment Hub Styles */
+.payment-hub-page {
+    min-height: 100vh;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.payment-hub-container {
+    width: 100%;
+    min-height: 100vh;
+    background: white;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* Header styles handled by StudentHeader.css */
+
+.payment-hub-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 24px;
+    padding: 24px;
+    background: white;
+    min-height: calc(100vh - 140px);
+}
+
+/* Sidebar Profile */
+.request-sidebar {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    height: fit-content;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+    margin: 0 0 4px;
+}
+
+.profile-email {
+    text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 12px;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #d1fae5;
+    color: #065f46;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0 auto 20px;
+    width: fit-content;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.profile-details {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    margin-top: 16px;
+    width: 100%;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.detail-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #111827;
+    font-weight: 500;
+}
+
+.back-to-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    margin-top: 20px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    background: transparent;
+    cursor: pointer;
+}
+
+.back-to-dashboard:hover {
+    background-color: #eff6ff;
+}
+
+/* Main Area */
+.payment-main {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.payment-main-header {
+    margin-bottom: 32px;
+}
+
+.payment-main-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.payment-main-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Payment History Section */
+.payment-history {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.payment-history-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px;
+}
+
+.payment-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: background-color 0.2s;
+}
+
+.payment-card:hover {
+    background-color: #f3f4f6;
+}
+
+.payment-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.payment-icon.blue {
+    background-color: #dbeafe;
+    color: #2563eb;
+}
+
+.payment-icon.green {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.payment-icon.red {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.payment-details {
+    flex: 1;
+}
+
+.payment-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.payment-info {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.payment-status {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.payment-status.successful {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.payment-status.failed {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.payment-status.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.payment-status.pending-warden {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.no-payments {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Pay Now button - green theme */
+.pay-now-btn {
+    background-color: #059669;
+    color: white;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pay-now-btn:hover {
+    background-color: #047857;
+}
+
+.pay-now-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Footer */
+.payment-hub-footer {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+}
+
+/* Status Message */
+.payment-status-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.payment-status-message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.payment-status-message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .payment-hub-content {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
